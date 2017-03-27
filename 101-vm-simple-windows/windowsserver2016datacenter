@@ -1,0 +1,274 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "availabilitySets_Exchange_name": {
+            "defaultValue": "Exchange",
+            "type": "String"
+        },
+        "virtualMachines_MyDC_name": {
+            "defaultValue": "MyDC",
+            "type": "String"
+        },
+        "networkInterfaces_mydc271_name": {
+            "defaultValue": "mydc271",
+            "type": "String"
+        },
+        "networkSecurityGroups_MyDC_nsg_name": {
+            "defaultValue": "MyDC-nsg",
+            "type": "String"
+        },
+        "publicIPAddresses_MyDC_ip_name": {
+            "defaultValue": "MyDC-ip",
+            "type": "String"
+        },
+        "virtualNetworks_MyExchange_vnet_name": {
+            "defaultValue": "MyExchange-vnet",
+            "type": "String"
+        },
+        "storageAccounts_myexchangediag791_name": {
+            "defaultValue": "myexchangediag791",
+            "type": "String"
+        },
+        "storageAccounts_myexchangedisks197_name": {
+            "defaultValue": "myexchangedisks197",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/MyExchange/providers/Microsoft.Compute/availabilitySets/Exchange'.",
+            "type": "Microsoft.Compute/availabilitySets",
+            "sku": {
+                "name": "Classic"
+            },
+            "name": "[parameters('availabilitySets_Exchange_name')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "centralus",
+            "properties": {
+                "platformUpdateDomainCount": 5,
+                "platformFaultDomainCount": 2,
+                "virtualMachines": [
+                    {
+                        "id": "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MyDC_name'))]"
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_MyDC_name'))]"
+            ]
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/MyExchange/providers/Microsoft.Compute/virtualMachines/MyDC'.",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('virtualMachines_MyDC_name')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "centralus",
+            "properties": {
+                "availabilitySet": {
+                    "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_Exchange_name'))]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "Standard_DS3_v2"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter-with-Containers",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Windows",
+                        "name": "[parameters('virtualMachines_MyDC_name')]",
+                        "createOption": "FromImage",
+                        "vhd": {
+                            "uri": "[concat('https', '://', parameters('storageAccounts_myexchangedisks197_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_MyDC_name'),'20170324170620.vhd'))]"
+                        },
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": [
+                        {
+                            "lun": 0,
+                            "name": "[concat(parameters('virtualMachines_MyDC_name'),'-20170324-172329')]",
+                            "createOption": "Empty",
+                            "vhd": {
+                                "uri": "[concat('https', '://', parameters('storageAccounts_myexchangedisks197_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_MyDC_name'),'-20170324-172329.vhd'))]"
+                            },
+                            "caching": "ReadOnly",
+                            "diskSizeGB": 50
+                        },
+                        {
+                            "lun": 1,
+                            "name": "[concat(parameters('virtualMachines_MyDC_name'),'-20170324-172436')]",
+                            "createOption": "Empty",
+                            "vhd": {
+                                "uri": "[concat('https', '://', parameters('storageAccounts_myexchangedisks197_name'), '.blob.core.windows.net', concat('/vhds/', parameters('virtualMachines_MyDC_name'),'-20170324-172436.vhd'))]"
+                            },
+                            "caching": "ReadOnly",
+                            "diskSizeGB": 5
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachines_MyDC_name')]",
+                    "adminUsername": "Mohi",
+                    "windowsConfiguration": {
+                        "provisionVMAgent": true,
+                        "enableAutomaticUpdates": true
+                    },
+                    "secrets": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_mydc271_name'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[concat('https', '://', parameters('storageAccounts_myexchangediag791_name'), '.blob.core.windows.net', '/')]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/availabilitySets', parameters('availabilitySets_Exchange_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_myexchangedisks197_name'))]",
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_mydc271_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_myexchangediag791_name'))]"
+            ]
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/MyExchange/providers/Microsoft.Network/networkInterfaces/mydc271'.",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[parameters('networkInterfaces_mydc271_name')]",
+            "apiVersion": "2016-03-30",
+            "location": "centralus",
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAddress": "10.0.0.4",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MyDC_ip_name'))]"
+                            },
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_MyExchange_vnet_name')), '/subnets/default')]"
+                            }
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableIPForwarding": false,
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MyDC_nsg_name'))]"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIPAddresses_MyDC_ip_name'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('virtualNetworks_MyExchange_vnet_name'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroups_MyDC_nsg_name'))]"
+            ]
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/MyExchange/providers/Microsoft.Network/networkSecurityGroups/MyDC-nsg'.",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[parameters('networkSecurityGroups_MyDC_nsg_name')]",
+            "apiVersion": "2016-03-30",
+            "location": "centralus",
+            "properties": {
+                "securityRules": [
+                    {
+                        "name": "default-allow-rdp",
+                        "properties": {
+                            "protocol": "TCP",
+                            "sourcePortRange": "*",
+                            "destinationPortRange": "3389",
+                            "sourceAddressPrefix": "*",
+                            "destinationAddressPrefix": "*",
+                            "access": "Allow",
+                            "priority": 1000,
+                            "direction": "Inbound"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/MyExchange/providers/Microsoft.Network/publicIPAddresses/MyDC-ip'.",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[parameters('publicIPAddresses_MyDC_ip_name')]",
+            "apiVersion": "2016-03-30",
+            "location": "centralus",
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "idleTimeoutInMinutes": 4,
+                "dnsSettings": {
+                    "domainNameLabel": "mohiexchange"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/MyExchange/providers/Microsoft.Network/virtualNetworks/MyExchange-vnet'.",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('virtualNetworks_MyExchange_vnet_name')]",
+            "apiVersion": "2016-03-30",
+            "location": "centralus",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/24"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24"
+                        }
+                    }
+                ]
+            },
+            "dependsOn": []
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/myexchange/providers/Microsoft.Storage/storageAccounts/myexchangediag791'.",
+            "type": "Microsoft.Storage/storageAccounts",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "Storage",
+            "name": "[parameters('storageAccounts_myexchangediag791_name')]",
+            "apiVersion": "2016-01-01",
+            "location": "centralus",
+            "tags": {},
+            "properties": {},
+            "dependsOn": []
+        },
+        {
+            "comments": "Generalized from resource: '/subscriptions/ba370fd6-629e-461d-a3cc-34564ce028dd/resourceGroups/myexchange/providers/Microsoft.Storage/storageAccounts/myexchangedisks197'.",
+            "type": "Microsoft.Storage/storageAccounts",
+            "sku": {
+                "name": "Premium_LRS",
+                "tier": "Premium"
+            },
+            "kind": "Storage",
+            "name": "[parameters('storageAccounts_myexchangedisks197_name')]",
+            "apiVersion": "2016-01-01",
+            "location": "centralus",
+            "tags": {},
+            "properties": {},
+            "dependsOn": []
+        }
+    ]
+}
